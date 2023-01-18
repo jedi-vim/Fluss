@@ -2,16 +2,14 @@ package main
 
 import (
 	"log"
-        "spotify-crawler/spotify"
+        "github.com/alecthomas/kong"
 )
 
 func main(){
-    accessToken := getAccessTokenFromFile() 
-    if accessToken == ""{
-        log.Println("Nao Existe token valido em arquivo, vou gerar um novo")
-        accessToken = spotify.GenerateNewAccessToken()
-        saveToken(accessToken)
+    cli := CLI{}
+    ctx := kong.Parse(&cli)
+    err := ctx.Run(&kong.Context{})
+    if err != nil{
+        log.Fatal(err)
     }
-    playlistsReferences := spotify.GetPlaylists(accessToken)
-    spotify.SavePlaylistsTracks(accessToken, playlistsReferences)
 }
