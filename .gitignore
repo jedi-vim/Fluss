@@ -1,0 +1,40 @@
+# Diretório de saída do build
+/dist
+
+# Binários e executáveis
+*.exe
+*.dll
+*.so
+*.dylib
+*.out
+
+# Arquivos gerados pelo sistema operacional
+.DS_Store
+Thumbs.db
+
+# Diretório de dependências baixadas pelo módulo Go
+/vendor/
+
+# Diretórios e arquivos criados durante o desenvolvimento
+*.log
+*.tmp
+
+# Cache e metadados do Go
+/go.sum
+/go.work
+/go.work.sum
+
+# Diretório de cache
+/.idea/
+/.vscode/
+/*.swp
+*.swo
+
+# Arquivos de cobertura de testes
+*.cover
+
+# Ferramentas externas
+.env
+
+# token files
+spotify/access_token.txt
