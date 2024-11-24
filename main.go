@@ -1,15 +1,11 @@
 package main
 
 import (
-	"log"
-        "github.com/alecthomas/kong"
+    "github.com/spf13/cobra"
 )
 
 func main(){
-    cli := CLI{}
-    ctx := kong.Parse(&cli)
-    err := ctx.Run(&kong.Context{})
-    if err != nil{
-        log.Fatal(err)
-    }
+    rootCmd := &cobra.Command{}
+    rootCmd.AddCommand(Export())
+    rootCmd.Execute()
 }
