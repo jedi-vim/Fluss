@@ -24,13 +24,12 @@ func generateBearerToken(spotifyClientId string, spotifyClientToken string) stri
     return base64.StdEncoding.EncodeToString(firstStepToBytes)
 }
 
-
-func GenerateNewAccessToken() string {
+func generateNewAccessToken(scope string) string {
     enviroment := Env()
 
     formData := url.Values{}
     formData.Set("response_type", "code")
-    formData.Set("scope", "user-library-read")
+    formData.Set("scope", scope)
     formData.Set("client_id", enviroment.SpotifyClientId)
     formData.Set("redirect_uri", "http://localhost:8080/callback")
     formData.Set("state", enviroment.Secret)
@@ -66,8 +65,8 @@ func GenerateNewAccessToken() string {
         log.Fatal(err)
     }
     authReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-    stringToEncode := fmt.Sprintf("%s:%s", enviroment.SpotifyClientId, enviroment.SpotifyClientToken)
-    authReq.Header.Set("Authorization", "Basic " + base64.StdEncoding.EncodeToString([]byte(stringToEncode)))
+    authReq.Header.Set(
+        "Authorization", "Basic " + generateBearerToken(enviroment.SpotifyClientId, enviroment.SpotifyClientToken))
     authReq.Header.Set("Accept", "application/json")
     
     res, err := http.DefaultClient.Do(authReq)
@@ -86,7 +85,6 @@ func GenerateNewAccessToken() string {
 }
 
 func getAccessTokenFromFile() string{
-    log.Println("Acessando informacao do arquivo de token")
     fileInfo, err := os.Stat(fileName)
     if os.IsNotExist(err){
         log.Println("Arquivo de token inexistente.")
@@ -116,11 +114,10 @@ func saveToken(newAccessToken string){
     tokenFile.WriteString(newAccessToken)
 }
 
-func GetAccessToken() (accessToken string){
+func GetAccessToken(scope string) (accessToken string){
     accessToken = getAccessTokenFromFile() 
     if accessToken == ""{
-        log.Println("No valid token exists, a new one will be generated")
-        accessToken = GenerateNewAccessToken()
+        accessToken = generateNewAccessToken(scope)
         saveToken(accessToken)
     }
     return

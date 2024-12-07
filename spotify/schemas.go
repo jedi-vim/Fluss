@@ -8,6 +8,24 @@ type ApiTokenResponse struct {
         Scope         string `json:scope`
 }
 
+type CursorsResponse struct{
+    Before string `json: before`
+    After  string `json: after`
+}
+
+type ArtistsResponse struct {
+	Artists struct {
+                Cursors CursorsResponse `json:"cursors"`
+		Items []Artist `json:"items"`
+                Total int `json: total`
+	} `json:"artists"`
+}
+
+type Artist struct {
+	Name   string   `json:"name"`
+	Genres []string `json:"genres"`
+}
+
 type UserPlaylistsResponse struct {
 	Items []struct {
 		ID     string `json:"id"`
