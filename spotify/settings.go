@@ -12,6 +12,7 @@ type Settings struct{
     SpotifyClientId      string  `env:"SPOTIFY_CLIENT_ID"`
     SpotifyClientToken   string  `env:"SPOTIFY_CLIENT_TOKEN"`
     SpotifyUserId        string  `env:"SPOTIFY_USER_ID"`
+    Secret               string  `env:SECRET`
 }
 
 func Env() Settings{

@@ -1,16 +1,19 @@
 package spotify
 
 import (
-    "os"
-    "io"
-    "log"
-    "time"
-    "fmt"
-    "strings"
-    "net/http"
-    "net/url"
-    "encoding/base64"
-    "encoding/json"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 const fileName = "spotify/access_token.txt"
@@ -21,10 +24,40 @@ func generateBearerToken(spotifyClientId string, spotifyClientToken string) stri
     return base64.StdEncoding.EncodeToString(firstStepToBytes)
 }
 
+
 func GenerateNewAccessToken() string {
     enviroment := Env()
-    formData := url.Values{"grant_type": {"client_credentials"}}
 
+    formData := url.Values{}
+    formData.Set("response_type", "code")
+    formData.Set("scope", "user-library-read")
+    formData.Set("client_id", enviroment.SpotifyClientId)
+    formData.Set("redirect_uri", "http://localhost:8080/callback")
+    formData.Set("state", enviroment.Secret)
+
+    exec.Command("xdg-open", enviroment.SpotifyAccountsUrl+"/authorize?" + formData.Encode()).Start()
+
+    chanToken := make(chan string)
+    go func(){
+        gin.DefaultWriter = io.Discard
+        app := gin.New()
+        app.GET("/callback", func(c *gin.Context){
+            if enviroment.Secret != c.Query("state"){
+                log.Fatal("Response from spotify malformed")
+            }
+            authToken := c.Query("code")
+            chanToken <- authToken
+            c.Abort()
+        })
+        app.Run(":8080")
+    }()
+
+    authorizationToken := <-chanToken
+    formData = url.Values{
+        "code": {authorizationToken},
+        "redirect_uri": {"http://localhost:8080/callback"},
+        "grant_type": {"authorization_code"},
+    }
     authReq, err := http.NewRequest(
         http.MethodPost, 
         enviroment.SpotifyAccountsUrl+"/api/token", 
@@ -32,26 +65,23 @@ func GenerateNewAccessToken() string {
     if err != nil{
         log.Fatal(err)
     }
-
-    bearerToken := fmt.Sprintf("Basic %s", generateBearerToken(enviroment.SpotifyClientId, enviroment.SpotifyClientToken))
-    authReq.Header.Set( "Content-Type", "application/x-www-form-urlencoded")
-    authReq.Header.Add( "Authorization", bearerToken)
+    authReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+    stringToEncode := fmt.Sprintf("%s:%s", enviroment.SpotifyClientId, enviroment.SpotifyClientToken)
+    authReq.Header.Set("Authorization", "Basic " + base64.StdEncoding.EncodeToString([]byte(stringToEncode)))
+    authReq.Header.Set("Accept", "application/json")
     
-    log.Println("Fazendo auth-request para o Spotify")
     res, err := http.DefaultClient.Do(authReq)
     if err != nil || res.StatusCode != 200{
         log.Fatal(err)
     }
     defer res.Body.Close()
 
-    bodyResp, _ := io.ReadAll(res.Body)
-    log.Printf("Resposta recebida do spotify:\n %s\n", bodyResp)
-
+    bodyResponse, _ := io.ReadAll(res.Body)
     var responseJson ApiTokenResponse
-    if jsonErr := json.Unmarshal(bodyResp, &responseJson); jsonErr != nil{
-        log.Println("Erro no decode da resposta json")
-        log.Fatal(jsonErr)
+    if err = json.Unmarshal(bodyResponse, &responseJson); err != nil{
+        log.Fatal(err)
     }
+    
     return responseJson.AccessToken
 }
 

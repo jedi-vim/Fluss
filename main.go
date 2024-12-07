@@ -1,11 +1,9 @@
 package main
 
 import (
-    "github.com/spf13/cobra"
+	"fluss/cmd"
 )
 
-func main(){
-    rootCmd := &cobra.Command{}
-    rootCmd.AddCommand(Export())
-    rootCmd.Execute()
+func main() {
+	cmd.RootCmd.Execute()
 }
